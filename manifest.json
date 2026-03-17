@@ -1,0 +1,36 @@
+{
+  "manifest_version": 2,
+  "name": "Thunderbird Email Translator",
+  "description": "Adds a button to the compose window to translate emails from English to French using Deepl.",
+  "version": "1.0",
+  "author": "Your Name",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "email-translator@yourdomain.com",
+      "strict_min_version": "128.0"
+    }
+  },
+  "icons": {
+    "64": "images/icon-64px.png",
+    "32": "images/icon-32px.png",
+    "16": "images/icon-16px.png"
+  },
+  "background": {
+    "page": "background.html"
+  },
+  "compose_action": {
+    "default_title": "Translate Email",
+    "default_icon": "images/icon-32px.png"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": false,
+    "browser_style": true
+  },
+  "permissions": [
+    "compose",
+    "storage",
+    "activeTab",
+    "https://api.deepl.com/*"
+  ]
+}

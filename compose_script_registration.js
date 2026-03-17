@@ -1,0 +1,3 @@
+// ...existing code...
+// Compose script registration for manifest.json
+// This file is referenced by composeScripts API if needed.
