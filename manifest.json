@@ -31,6 +31,7 @@
     "compose",
     "storage",
     "notifications",
-    "https://api.deepl.com/*"
+    "https://api.deepl.com/*",
+    "https://api-free.deepl.com/*"
   ]
 }

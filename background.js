@@ -1,13 +1,9 @@
 // background.js
-// Registers compose script and handles DeepL translation requests.
+// Handles compose action button click, translation via DeepL, and body update.
 
 console.log("background.js loaded");
 
-messenger.composeScripts.register({
-  js: [{ file: "compose_script.js" }]
-});
-
-// Cache the API key so translateText doesn't hit storage on every call.
+// Cache the API key to avoid a storage read on every translation.
 let cachedApiKey = null;
 const keyReady = messenger.storage.local.get("deeplApiKey").then(({ deeplApiKey }) => {
   cachedApiKey = deeplApiKey || null;
@@ -19,22 +15,40 @@ messenger.storage.onChanged.addListener((changes) => {
   }
 });
 
+// Free-plan keys end with ":fx" and require a different base URL.
+function getApiUrl(apiKey) {
+  return apiKey.endsWith(":fx")
+    ? "https://api-free.deepl.com/v2/translate"
+    : "https://api.deepl.com/v2/translate";
+}
+
+function splitBodyAndSignature(body, isHtml) {
+  if (isHtml) {
+    const hrMatch = body.match(/<hr[\s>\/]/i);
+    if (hrMatch) {
+      return { main: body.substring(0, hrMatch.index), signature: body.substring(hrMatch.index) };
+    }
+  } else {
+    const sigIndex = body.indexOf("\n-- ");
+    if (sigIndex !== -1) {
+      return { main: body.substring(0, sigIndex), signature: body.substring(sigIndex) };
+    }
+  }
+  return { main: body, signature: "" };
+}
+
 async function translateText(text, isHtml) {
-  await keyReady; // no-op after the first storage read resolves
+  await keyReady;
   if (!cachedApiKey) {
     throw new Error("DeepL API key not set. Please configure it in the add-on options.");
   }
 
-  const payload = {
-    text: [text],
-    target_lang: "FR"
-  };
-
+  const payload = { text: [text], target_lang: "FR" };
   if (isHtml) {
     payload.tag_handling = "html";
   }
 
-  const response = await fetch("https://api.deepl.com/v2/translate", {
+  const response = await fetch(getApiUrl(cachedApiKey), {
     method: "POST",
     headers: {
       "Authorization": `DeepL-Auth-Key ${cachedApiKey}`,
@@ -51,13 +65,35 @@ async function translateText(text, isHtml) {
   return data.translations[0].text;
 }
 
-messenger.runtime.onMessage.addListener(async (message) => {
-  if (message.type === "translate") {
-    try {
-      const translated = await translateText(message.text, message.isHtml);
-      return { success: true, translated };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+let isTranslating = false;
+
+messenger.composeAction.onClicked.addListener(async (tab) => {
+  if (isTranslating) return;
+  isTranslating = true;
+  try {
+    const details = await messenger.compose.getComposeDetails(tab.id);
+    const isHtml = !details.isPlainText;
+
+    const mode = isHtml
+      ? { bodyText: details.body, separator: "<hr><p><em>Automatically translated from English.</em></p>", updateKey: "body" }
+      : { bodyText: details.plainTextBody, separator: "\n\n---\nAutomatically translated from English.\n\n", updateKey: "plainTextBody" };
+
+    const { main, signature } = splitBodyAndSignature(mode.bodyText, isHtml);
+    const translated = await translateText(main, isHtml);
+
+    await messenger.compose.setComposeDetails(tab.id, {
+      [mode.updateKey]: `${translated}${mode.separator}${main}${signature}`
+    });
+
+    console.log("Body updated with translation.");
+  } catch (err) {
+    console.error("Translation failed:", err);
+    await messenger.notifications.create({
+      type: "basic",
+      title: "Translation Error",
+      message: err.message || "An unknown error occurred."
+    });
+  } finally {
+    isTranslating = false;
   }
 });
