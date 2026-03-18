@@ -75,14 +75,26 @@ messenger.composeAction.onClicked.addListener(async (tab) => {
     const isHtml = !details.isPlainText;
 
     const mode = isHtml
-      ? { bodyText: details.body, separator: "<hr><p><em>Automatically translated from English.</em></p>", updateKey: "body" }
-      : { bodyText: details.plainTextBody, separator: "\n\n---\nAutomatically translated from English.\n\n", updateKey: "plainTextBody" };
+      ? {
+          bodyText: details.body,
+          header: "<p><em>Traduit automatiquement de l'anglais.</em></p>",
+          divider: "<hr>",
+          originalLabel: "<p><strong>Texte original en anglais :</strong></p>",
+          updateKey: "body"
+        }
+      : {
+          bodyText: details.plainTextBody,
+          header: "Traduit automatiquement de l'anglais.\n\n",
+          divider: "\n\n---\n\n",
+          originalLabel: "Texte original en anglais :\n\n",
+          updateKey: "plainTextBody"
+        };
 
     const { main, signature } = splitBodyAndSignature(mode.bodyText, isHtml);
     const translated = await translateText(main, isHtml);
 
     await messenger.compose.setComposeDetails(tab.id, {
-      [mode.updateKey]: `${translated}${mode.separator}${main}${signature}`
+      [mode.updateKey]: `${mode.header}${translated}${mode.divider}${mode.originalLabel}${main}${signature}`
     });
 
     console.log("Body updated with translation.");
