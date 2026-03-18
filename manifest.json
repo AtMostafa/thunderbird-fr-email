@@ -30,7 +30,7 @@
   "permissions": [
     "compose",
     "storage",
-    "activeTab",
+    "notifications",
     "https://api.deepl.com/*"
   ]
 }

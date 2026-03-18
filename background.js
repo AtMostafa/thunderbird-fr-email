@@ -1,51 +1,63 @@
 // background.js
-// Handles translation requests and messaging
+// Registers compose script and handles DeepL translation requests.
 
 console.log("background.js loaded");
 
-// Register compose_script.js for compose windows
 messenger.composeScripts.register({
   js: [{ file: "compose_script.js" }]
 });
 
-async function translateText(text) {
-  // Retrieve Deepl API key from storage
-  const { deeplApiKey } = await browser.storage.local.get("deeplApiKey");
-  if (!deeplApiKey) {
-    throw new Error("Deepl API key not set.");
+// Cache the API key so translateText doesn't hit storage on every call.
+let cachedApiKey = null;
+const keyReady = messenger.storage.local.get("deeplApiKey").then(({ deeplApiKey }) => {
+  cachedApiKey = deeplApiKey || null;
+});
+
+messenger.storage.onChanged.addListener((changes) => {
+  if ("deeplApiKey" in changes) {
+    cachedApiKey = changes.deeplApiKey.newValue || null;
+  }
+});
+
+async function translateText(text, isHtml) {
+  await keyReady; // no-op after the first storage read resolves
+  if (!cachedApiKey) {
+    throw new Error("DeepL API key not set. Please configure it in the add-on options.");
   }
 
-  // Deepl API endpoint
-  const url = "https://api.deepl.com/v2/translate";
-  const body = JSON.stringify({
+  const payload = {
     text: [text],
     target_lang: "FR"
-  });
+  };
 
-  const response = await fetch(url, {
+  if (isHtml) {
+    payload.tag_handling = "html";
+  }
+
+  const response = await fetch("https://api.deepl.com/v2/translate", {
     method: "POST",
     headers: {
-      "Authorization": `DeepL-Auth-Key ${deeplApiKey}`,
+      "Authorization": `DeepL-Auth-Key ${cachedApiKey}`,
       "Content-Type": "application/json"
     },
-    body
+    body: JSON.stringify(payload)
   });
 
   if (!response.ok) {
-    throw new Error("Translation failed.");
+    throw new Error(`DeepL API error: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();
   return data.translations[0].text;
 }
 
-browser.runtime.onMessage.addListener(async (message, sender) => {
+messenger.runtime.onMessage.addListener(async (message) => {
   if (message.type === "translate") {
     try {
-      const translated = await translateText(message.text);
-      return Promise.resolve({ success: true, translated });
+      const translated = await translateText(message.text, message.isHtml);
+      return { success: true, translated };
     } catch (error) {
-      return Promise.resolve({ success: false, error: error.message });
+      return { success: false, error: error.message };
     }
   }
 });
