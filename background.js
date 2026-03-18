@@ -77,14 +77,14 @@ messenger.composeAction.onClicked.addListener(async (tab) => {
     const mode = isHtml
       ? {
           bodyText: details.body,
-          header: "<p><em>Traduit automatiquement de l'anglais.</em></p>",
+          header: "<p><em>Traduit automatiquement de l'anglais :</em></p>",
           divider: "<hr>",
-          originalLabel: "<p><strong>Texte original en anglais :</strong></p>",
+          originalLabel: "<p><em>Texte original en anglais :</em></p>",
           updateKey: "body"
         }
       : {
           bodyText: details.plainTextBody,
-          header: "Traduit automatiquement de l'anglais.\n\n",
+          header: "Traduit automatiquement de l'anglais : \n\n",
           divider: "\n\n---\n\n",
           originalLabel: "Texte original en anglais :\n\n",
           updateKey: "plainTextBody"

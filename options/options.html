@@ -6,7 +6,7 @@
   <style>
     body { font-family: sans-serif; margin: 20px; }
     label { display: block; margin-bottom: 8px; }
-    input { width: 100%; margin-bottom: 12px; }
+    input, select { width: 100%; margin-bottom: 12px; }
     button { padding: 6px 12px; }
   </style>
 </head>
@@ -14,6 +14,21 @@
   <h2>Deepl API Key</h2>
   <label for="deeplApiKey">Enter your Deepl API key:</label>
   <input type="text" id="deeplApiKey" placeholder="API key" />
+
+  <label for="targetLang">Target language:</label>
+  <select id="targetLang">
+    <option value="FR">French</option>
+    <option value="DE">German</option>
+    <option value="ES">Spanish</option>
+    <option value="IT">Italian</option>
+    <option value="PT-PT">Portuguese (European)</option>
+    <option value="PT-BR">Portuguese (Brazilian)</option>
+    <option value="NL">Dutch</option>
+    <option value="PL">Polish</option>
+    <option value="JA">Japanese</option>
+    <option value="ZH">Chinese</option>
+  </select>
+
   <button id="saveBtn">Save</button>
   <div id="status"></div>
   <script src="options.js"></script>
