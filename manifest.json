@@ -3,10 +3,10 @@
   "name": "Thunderbird Email Translator",
   "description": "Adds a button to the compose window to translate emails from English to French using Deepl.",
   "version": "1.0",
-  "author": "Your Name",
+  "author": "Mostafa Safaie",
   "browser_specific_settings": {
     "gecko": {
-      "id": "email-translator@yourdomain.com",
+      "id": "mostafa.safaie@gmail.com",
       "strict_min_version": "128.0"
     }
   },
